@@ -8,7 +8,7 @@ theme_black_box <- list(
         axis.line = element_line(color = NA))
 )
 
-reactor_cols <- c("#c44900", "#183a37", "#693A52")
+reactor_cols <- c("#06d6a0", "#118ab2", "#073b4c")
 carbon_cols <- c("#3a86ff", "#ff006e", "#8338ec")
 
 scale_color_reactor <- scale_color_manual(values = reactor_cols, name = "Reactor")
