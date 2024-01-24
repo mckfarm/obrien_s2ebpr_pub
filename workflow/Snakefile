@@ -1,0 +1,16 @@
+import itertools
+import os 
+import glob
+import sys
+import pandas as pd
+
+configfile: "workflow/config.yaml"
+
+include: "rules/common.smk"
+include: "rules/dada2.smk"
+include: "rules/deblur.smk"
+
+
+rule all:
+    input:
+        get_rules
