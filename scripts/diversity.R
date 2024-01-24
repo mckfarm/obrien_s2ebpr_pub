@@ -1,33 +1,45 @@
 ### alpha and beta diversity plots ###
 
-
+### packages ----
 library(tidyverse)
-library(ggpubr)
-library(ggcorrplot)
-library(reshape2)
-library(rstatix)
-library(MetBrewer)
 library(phyloseq)
 library(qiime2R)
 library(vegan)
+library(patchwork)
 
-source("analysis/plotting.R")
 
+source("scripts/plotting_cols_shapes.R")
 
+### data read in -----
 metadata <- read.delim("data/metadata.txt", sep = "\t")
 metadata$date <- mdy(metadata$date)
 metadata_ps <- metadata %>% column_to_rownames("sample")
 metadata_ps <- sample_data(metadata_ps)
 
-ps <- qza_to_phyloseq(features = "qiime_io/table_deblur.qza", 
-                      taxonomy = "qiime_io/taxonomy_deblur.qza",
-                      tree = "qiime_io/rooted_tree_deblur.qza")
+ps <- qza_to_phyloseq(features = "data/table_deblur.qza", 
+                      taxonomy = "data/taxonomy_deblur.qza",
+                      tree = "data/rooted_tree_deblur.qza")
 
 ps <- merge_phyloseq(ps, metadata_ps)
 
 ps_rel <- transform_sample_counts(ps, function(x) x*100/sum(x))
 
-rm(ps)
+
+metadata_helper <- metadata %>%
+  mutate(perf = case_when(
+    reactor == "SBR1" ~ "no C", 
+    (reactor != "SBR1" & date < ymd("2022-10-26")) ~ "no C",
+    (reactor != "SBR1" & between(date, ymd("2022-10-25"), ymd("2022-12-2"))) ~ "high C",
+    (reactor != "SBR1" & between(date, ymd("2022-12-2"), ymd("2023-05-12"))) ~ "reduced C",
+    (reactor != "SBR1" & date > ymd("2023-05-12")) ~ "no C"
+  )) %>%
+  mutate(op_mode = case_when(
+    reactor == "SBR1" ~ "EBPR",
+    reactor == "SBR2" ~ "S2EBPR",
+    (reactor == "SBR3" & date < ymd("2023-03-06")) ~ "EBPR",
+    (reactor == "SBR3" & date >= ymd("2023-03-06")) ~ "S2EBPR"
+  ))
+
 
 ### weighted unifrac - operation mode - all data ----
 dist_all <- distance(ps_rel, method = "wunifrac")
@@ -36,24 +48,59 @@ dist_df <- as.data.frame(as.matrix(dist_all))
 name_order <- colnames(dist_df)
 
 metadata_ordered <- metadata_helper[match(name_order, metadata_helper$sample), ]
-groups <- factor(metadata_ordered$op_mode)
+groups <- factor(metadata_ordered$reactor)
 
 disper_all <- betadisper(dist_all, groups, bias.adjust = TRUE)
 
+# raw plot 
 plot(disper_all, hull = FALSE, ellipse = TRUE,
      xlab = "Axis 1 [27.6%]", ylab = "Axis2 [12.2%]", sub = NULL, main = "Weighted Unifrac")
 
+# nice plot
+dist_result_df <- disper_all$vectors %>% 
+  as.data.frame() %>% 
+  select(c(PCoA1, PCoA2)) %>%
+  rownames_to_column(var = "sample") %>%
+  mutate(point = "points") %>%
+  left_join(metadata_ordered)
+
+centroid_df <- disper_all$centroids %>% 
+  as.data.frame() %>%
+  select(c(PCoA1, PCoA2)) %>% 
+  rownames_to_column(var = "reactor") %>%
+  mutate(point = "centroid") 
+
+dist_result_df <- dist_result_df %>%
+  bind_rows(centroid_df)
+
+plt1 <- 
+ggplot(dist_result_df, aes(x = PCoA1, y = PCoA2, color = reactor)) + 
+  geom_point(data = . %>% filter(point == "points"), 
+             aes(shape = op_mode), size = 2) +
+  geom_point(data = . %>% filter(point == "centroid"), 
+             shape = 21, size = 3) + 
+  scale_color_reactor +
+  scale_shape_op_mode + 
+  labs(x = "Axis 1 [27.6%]", y = "Axis 2 [12.2%]", title = "Weighted Unifrac distance") + 
+  theme_classic() +
+  theme(panel.border = element_rect(color = "black", fill = NA),
+        axis.line = element_line(color = NA)) +
+  guides(color = guide_legend(order = 1), 
+         shape = guide_legend(order = 2))
+  
+
+# centroid boxplot
 dist_df_box <- as.data.frame(as.matrix(disper_all$distances)) %>%
   rownames_to_column(var = "sample") %>%
   left_join(metadata_ordered)
 
-ggplot(dist_df_box, aes(x = op_mode, y = V1, color = op_mode)) +
+plt2 <- 
+ggplot(dist_df_box, aes(x = reactor, y = V1, color = reactor)) +
   geom_boxplot() +
-  theme_classic() +
-  theme(legend.position = "none") +
-  labs(y = "Distance to centroid", x = "")
-
-
+  scale_color_reactor + 
+  ylim(0, 0.04) + 
+  labs(y = "Distance to centroid", x = "Reactor") +
+  theme_black_box + theme(legend.position = "none")
 
 
 
@@ -72,16 +119,84 @@ groups <- factor(metadata_ordered$perf)
 
 disper_all <- betadisper(sbr23_dist, groups, bias.adjust = TRUE)
 
+# raw plot
 plot(disper_all, hull = FALSE, ellipse = TRUE,
      xlab = "Axis 1 [31.2%]", ylab = "Axis2 [14.2%]", sub = NULL, main = "Weighted Unifrac")
+
+dist_result_df <- disper_all$vectors %>% 
+  as.data.frame() %>% 
+  select(c(PCoA1, PCoA2)) %>%
+  rownames_to_column(var = "sample") %>%
+  mutate(point = "points") %>%
+  left_join(metadata_ordered)
+
+centroid_df <- disper_all$centroids %>% 
+  as.data.frame() %>%
+  select(c(PCoA1, PCoA2)) %>% 
+  rownames_to_column(var = "perf") %>%
+  mutate(point = "centroid") 
+
+dist_result_df <- dist_result_df %>%
+  bind_rows(centroid_df) %>%
+  mutate(perf = factor(perf, levels = c("no C", "reduced C", "high C")))
+
+plt3 <- 
+ggplot(dist_result_df, aes(x = PCoA1, y = PCoA2, color = perf)) + 
+  geom_point(data = . %>% filter(point == "points"), 
+             aes(shape = op_mode), size = 2) +
+  geom_point(data = . %>% filter(point == "centroid"), 
+            shape = 21, size = 3) + 
+  scale_shape_op_mode + 
+  scale_color_perf + 
+  labs(x = "Axis 1 [31.2%]", y = "Axis 2 [14.2%]", title = "Weighted Unifrac distance - SBR2 and SBR3 only") + 
+  theme_black_box + 
+  guides(color = guide_legend(order = 1), 
+         shape = guide_legend(order = 2))
 
 dist_df_box <- as.data.frame(as.matrix(disper_all$distances)) %>%
   rownames_to_column(var = "sample") %>%
   left_join(metadata_ordered) %>%
   mutate(perf = factor(perf, levels = c("no C", "reduced C", "high C")))
 
+plt4 <- 
 ggplot(dist_df_box, aes(x = perf, y = V1, color = perf)) +
   geom_boxplot() +
-  theme_classic() +
-  theme(legend.position = "none") +
-  labs(y = "Distance to centroid", x = "")
+  scale_color_perf + 
+  ylim(0, 0.04) + 
+  labs(y = "Distance to centroid", x = "Carbon") +
+  theme_black_box + theme(legend.position = "none")
+
+# combo
+plt1 + plt3 + plt2 + plt4 + plot_layout(ncol = 2)
+ggsave("results/beta_diversity_bigplot.png", units = "in", width = 12, height = 7, dpi = 300)
+
+
+### alpha diversity ----
+source("scripts/plotting_dates.R")
+
+tot_counts <- as.data.frame(as.matrix(sample_sums(ps))) %>%
+rename(tot_count = V1) %>%
+  rownames_to_column(var = "sample")
+
+alpha_div <- estimate_richness(ps) %>% 
+  rownames_to_column(var = "sample") %>%
+  mutate(sample = str_replace(sample, "\\.", "-")) %>%
+  left_join(tot_counts) %>%
+  pivot_longer(-sample) %>%
+  left_join(metadata_helper) 
+
+alpha_div %>% 
+  filter(name %in% c("InvSimpson", "Shannon")) %>% 
+  ggplot(., aes(x = date, y = value, color = reactor, shape = reactor)) +
+  facet_wrap(~name, scales = "free") + 
+  geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
+  geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
+  geom_point(size = 3) +
+  geom_line(linewidth = 0.3) + 
+  theme_black_box +
+  scale_color_reactor +
+  scale_shape_reactor + 
+  x_axis_date +
+  labs(x = "Date", y = "Alpha diversity measure")
+
+ggsave("results/alpha_diversity.png", units = "in", width = 8, height = 4, dpi = 300)
