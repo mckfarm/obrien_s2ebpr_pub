@@ -44,6 +44,22 @@ rel_pao_gao %>%
 ggsave("results/pao_gao_maintext.png", width = 7, height = 4, units = "in", dpi = 300)
 
 
+rel_pao_gao %>% 
+  ggplot(data = ., aes(x = date, y = sum, color = reactor)) +
+  facet_wrap(~genus_format, scales = "free") + 
+  # geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
+  # geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
+  geom_line(linewidth = 0.3) +
+  geom_point(size = 2.5, aes(shape = perf), fill = "white", alpha = 0.8) +
+  scale_color_reactor +
+  scale_shape_carb + 
+  x_axis_date + 
+  labs(x = "", y = "Relative abundance [%]") +
+  theme_black_box +
+  theme(strip.text = element_text(face = "italic"))
+ggsave("results/pao_gao_supplemental.png", width = 10, height = 6, units = "in", dpi = 300)
+
+
 
 my_comparisons <- list(c("SBR1", "SBR2"),
                        c("SBR2", "SBR3"),
