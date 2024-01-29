@@ -19,3 +19,4 @@ scale_shape_op_mode <- scale_shape_manual(values = c(16, 17), name = "Operation 
 scale_color_perf <- scale_color_manual(values = carbon_cols, name = "Carbon")
 
 
+scale_shape_carb <- scale_shape_manual(values = c(21, 19), name = "Carbon dose")
