@@ -19,26 +19,29 @@ rel_pao_gao <- readRDS("data/rel_pao_gao.RDS") %>%
   filter(genus_format %in% pao_gao_list_format) %>%
   mutate(genus_format = factor(genus_format, levels = pao_gao_list_format)) %>%
   mutate(perf = case_when(
-    reactor == "SBR1" ~ "no C", 
-    (reactor != "SBR1" & date < ymd("2022-10-26")) ~ "no C",
+    reactor == "SBR1" ~ "C off", 
+    (reactor != "SBR1" & date < ymd("2022-10-26")) ~ "C off",
     (reactor != "SBR1" & between(date, ymd("2022-10-25"), ymd("2023-05-12"))) ~ "C on",
-    (reactor != "SBR1" & date > ymd("2023-05-12")) ~ "no C"
+    (reactor != "SBR1" & date > ymd("2023-05-12")) ~ "C off"
   ))
 
 rel_pao_gao %>% 
   filter(reactor != "SBR3") %>%
-  filter(genus_format %in% c("Ca. Accumulibacter", "Ca. Phosphoribacter", "Tetrasphaera", "Ca. Competibacter")) %>%
+  filter(genus_format %in% c("Ca. Accumulibacter", "Ca. Phosphoribacter", "Dechloromonas", "Ca. Competibacter")) %>%
   ggplot(data = ., aes(x = date, y = sum, color = reactor)) +
   facet_wrap(~genus_format) + 
   # geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
   # geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
-  geom_point(size = 3, aes(shape = perf)) +
   geom_line(linewidth = 0.3) +
+  geom_point(size = 3, aes(shape = perf), fill = "white") +
   scale_color_reactor +
   scale_shape_carb + 
   x_axis_date + 
+  ylim(0, 2.4) + 
+  labs(x = "", y = "Relative abundance [%]") +
   theme_black_box +
-  labs(x = "", y = "Relative abundance [%]")
+  theme(strip.text = element_text(face = "italic"))
+ggsave("results/pao_gao_maintext.png", width = 7, height = 4, units = "in", dpi = 300)
 
 
 
