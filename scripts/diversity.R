@@ -33,6 +33,12 @@ metadata_helper <- metadata %>%
     (reactor != "SBR1" & between(date, ymd("2022-12-2"), ymd("2023-05-12"))) ~ "reduced C",
     (reactor != "SBR1" & date > ymd("2023-05-12")) ~ "no C"
   )) %>%
+  mutate(carb = case_when(
+    reactor == "SBR1" ~ "C off", 
+    (reactor != "SBR1" & date < ymd("2022-10-26")) ~ "C off",
+    (reactor != "SBR1" & between(date, ymd("2022-10-25"), ymd("2023-05-12"))) ~ "C on",
+    (reactor != "SBR1" & date > ymd("2023-05-12")) ~ "C off"
+  )) %>%
   mutate(op_mode = case_when(
     reactor == "SBR1" ~ "EBPR",
     reactor == "SBR2" ~ "S2EBPR",
@@ -175,7 +181,7 @@ ggsave("results/beta_diversity_bigplot.png", units = "in", width = 12, height = 
 source("scripts/plotting_dates.R")
 
 tot_counts <- as.data.frame(as.matrix(sample_sums(ps))) %>%
-rename(tot_count = V1) %>%
+  rename(tot_count = V1) %>%
   rownames_to_column(var = "sample")
 
 alpha_div <- estimate_richness(ps) %>% 
@@ -187,16 +193,16 @@ alpha_div <- estimate_richness(ps) %>%
 
 alpha_div %>% 
   filter(name %in% c("InvSimpson", "Shannon")) %>% 
-  ggplot(., aes(x = date, y = value, color = reactor, shape = reactor)) +
+  ggplot(data = ., aes(x = date, y = value, color = reactor)) +
   facet_wrap(~name, scales = "free") + 
-  geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
-  geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
-  geom_point(size = 3) +
-  geom_line(linewidth = 0.3) + 
-  theme_black_box +
+  # geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
+  # geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
+  geom_point(size = 3, aes(shape = carb)) +
+  geom_line(linewidth = 0.3) +
   scale_color_reactor +
-  scale_shape_reactor + 
-  x_axis_date +
+  scale_shape_carb + 
+  x_axis_date + 
+  theme_black_box +
   labs(x = "Date", y = "Alpha diversity measure")
 
-ggsave("results/alpha_diversity.png", units = "in", width = 8, height = 4, dpi = 300)
+ggsave("results/alpha_diversity.png", units = "in", width = 8, height = 3.5, dpi = 300)
