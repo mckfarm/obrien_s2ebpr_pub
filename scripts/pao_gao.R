@@ -5,6 +5,7 @@ library(tidyverse)
 library(ggpubr)
 library(reshape2)
 library(rstatix)
+library(patchwork)
 
 source("scripts/plotting_cols_shapes.R")
 source("scripts/plotting_dates.R")
@@ -13,6 +14,10 @@ source("scripts/plotting_dates.R")
 pao_gao_list_format <- c("Ca. Accumulibacter", "Ca. Obscuribacter", "Ca. Phosphoribacter",
                          "Dechloromonas", "Tetrasphaera", 
                          "Ca. Competibacter", "Ca. Contendobacter", "Defluviicoccus")
+
+pao_list <- c("Ca. Accumulibacter", "Ca. Obscuribacter", "Ca. Phosphoribacter",
+                         "Dechloromonas", "Tetrasphaera")
+gao_list <- c("Ca. Competibacter", "Ca. Contendobacter", "Defluviicoccus")
 
 rel_pao_gao <- readRDS("data/rel_pao_gao.RDS") %>%
   mutate(genus_format = str_replace(Genus, "Ca_", "Ca. ")) %>%
@@ -25,6 +30,8 @@ rel_pao_gao <- readRDS("data/rel_pao_gao.RDS") %>%
     (reactor != "SBR1" & date > ymd("2023-05-12")) ~ "C off"
   ))
 
+### plots ----
+# main text rel ab over time
 rel_pao_gao %>% 
   filter(reactor != "SBR3") %>%
   filter(genus_format %in% c("Ca. Accumulibacter", "Ca. Phosphoribacter", "Dechloromonas", "Ca. Competibacter")) %>%
@@ -43,7 +50,7 @@ rel_pao_gao %>%
   theme(strip.text = element_text(face = "italic"))
 ggsave("results/pao_gao_maintext.png", width = 7, height = 4, units = "in", dpi = 300)
 
-
+# supplemental all pao rel ab over time
 rel_pao_gao %>% 
   ggplot(data = ., aes(x = date, y = sum, color = reactor)) +
   facet_wrap(~genus_format, scales = "free") + 
@@ -60,22 +67,41 @@ rel_pao_gao %>%
 ggsave("results/pao_gao_supplemental.png", width = 10, height = 6, units = "in", dpi = 300)
 
 
+# comparisons of abundance by reactor configuration?
 
 my_comparisons <- list(c("SBR1", "SBR2"),
                        c("SBR2", "SBR3"),
                        c("SBR1", "SBR3"))
-
+compare_pao <- 
 rel_pao_gao %>% 
+  filter(genus_format %in% pao_list) %>%
   ggplot(data = ., aes(x = reactor, y = sum, color = reactor)) +
   facet_wrap(~genus_format, scales = "free") + 
   geom_boxplot(outlier.color = NA) + 
   geom_point(position = position_jitterdodge()) + 
   scale_color_reactor + 
-  stat_compare_means(method = "kruskal") +
-  scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.1))) +
+  stat_compare_means(method = "wilcox", comparisons = my_comparisons) +
+  scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.15))) +
   labs(x = "", y = "Relative abundance [%]") +
   theme_black_box + theme(legend.position = "none", 
                           strip.text = element_text(face = "italic")) 
+
+compare_gao <- 
+rel_pao_gao %>% 
+  filter(genus_format %in% gao_list) %>%
+  ggplot(data = ., aes(x = reactor, y = sum, color = reactor)) +
+  facet_wrap(~genus_format, scales = "free") + 
+  geom_boxplot(outlier.color = NA) + 
+  geom_point(position = position_jitterdodge()) + 
+  scale_color_reactor + 
+  stat_compare_means(method = "wilcox", comparisons = my_comparisons) +
+  scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.15))) +
+  labs(x = "", y = "Relative abundance [%]") +
+  theme_black_box + theme(legend.position = "none", 
+                          strip.text = element_text(face = "italic")) 
+
+compare_pao / compare_gao + plot_layout(heights = c(2, 1), axis_titles = "collect")
+
 
 ### omfg why didnt I google this sooner 
 ### https://stackoverflow.com/questions/67813734/adjusting-y-axis-limits-in-ggplot2-with-facet-and-free-scales
