@@ -2,6 +2,8 @@
 
 library(Maaslin2)
 library(tidyverse)
+library(MetBrewer)
+
 
 # prep ----
 rel_genus <- readRDS("data/rel_genus.RDS")
@@ -45,9 +47,9 @@ fit_genus_sep <- Maaslin2(input_data = maaslin_genus,
                      min_abundance = 0.1,
                      min_prevalence = 0.5,
                      normalization = "TSS",
-                     fixed_effects = c("reactor", "temp", "flow_2weekave", "perf"),
+                     fixed_effects = c("reactor", "temp", "flow_2weekave"),
                      reference = c(("reactor,SBR1"),("perf,no C")),
-                     output = "data/maaslin_genus")
+                     output = "results/maaslin_genus")
 
 sig_table <- fit_genus_sep$results %>% 
   mutate(map_val = -1*log(qval) * sign(coef)) %>% # how they make the heatmap in tutorial
@@ -58,12 +60,16 @@ sig_table <- fit_genus_sep$results %>%
   filter(pval <= 0.01)
 
 sig_table %>%
-  ggplot(., aes(x=value, y = Genus, fill=coef)) +
+  filter(metadata != "perf") %>%
+  mutate(value = factor(value, levels = c("SBR2", "SBR3", "flow_2weekave", "temp"))) %>%
+  ggplot(., aes(x=value, y = Genus, fill=map_val)) +
   geom_tile() +
   geom_text(aes(label=map_sign)) +
-  scale_fill_distiller(palette = "Spectral") +
+  scale_fill_gradientn(colors = met.brewer("Morgenstern"), limits = c(-6, 6), name = "-log(qval)*sign(coef)") +
   scale_y_discrete(limits = rev) +
   theme_bw() +
-  labs(x = "Variable", y = "Genus")
+  labs(x = "Variable", y = "Genus") +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
+ggsave("results/maaslin_diff_ab.png", width = 5, height = 10, units = "in", dpi = 300)
 
 
