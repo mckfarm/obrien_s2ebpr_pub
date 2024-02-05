@@ -10,6 +10,7 @@ theme_black_box <- list(
 
 reactor_cols <- c("#06d6a0", "#118ab2", "#073b4c")
 carbon_cols <- c("#3a86ff", "#ff006e", "#8338ec")
+mode_cols <- c("#ff9770", "#ff70a6")
 
 scale_color_reactor <- scale_color_manual(values = reactor_cols, name = "Reactor")
 scale_shape_reactor <- scale_shape_manual(values = c(21, 22, 23), name = "Reactor")

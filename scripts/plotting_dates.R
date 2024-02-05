@@ -6,16 +6,16 @@ phases <- data.frame(x0 = ymd("2022-10-26"),
                      red_C = ymd("2022-12-2"),
                      no_C = ymd("2023-05-12"))
 
-sbr3_lines <- list(
-  geom_vline(xintercept = phases$x2, color="navyblue", linetype="dashed"),
-  geom_vline(xintercept = phases$x3, color="navyblue", linetype="dashed")
-)
-
-carbon_lines <- list(
-  geom_vline(xintercept = phases$x0, color="navyblue", linetype="dashed"),
-  geom_vline(xintercept = phases$red_C, color="navyblue", linetype="dashed"),
-  geom_vline(xintercept = phases$no_C, color="navyblue", linetype="dashed")
-)
+# sbr3_lines <- list(
+#   geom_vline(xintercept = phases$x2, color="navyblue", linetype="dashed"),
+#   geom_vline(xintercept = phases$x3, color="navyblue", linetype="dashed")
+# )
+# 
+# carbon_lines <- list(
+#   geom_vline(xintercept = phases$x0, color="navyblue", linetype="dashed"),
+#   geom_vline(xintercept = phases$red_C, color="navyblue", linetype="dashed"),
+#   geom_vline(xintercept = phases$no_C, color="navyblue", linetype="dashed")
+# )
 
 x_axis_date <- scale_x_date(
   breaks="3 months",
@@ -23,17 +23,6 @@ x_axis_date <- scale_x_date(
 )
 
 x_axis_date_short <- scale_x_date(
-  breaks="1 months",
-  date_labels="%b"
-)
-
-
-default_timeseries <- list(theme_bw(), 
-                           labs(y = "Relative abundance [%]", x = "Date"), 
-                           x_axis_date
-)
-
-default_timeseries_short <- list(theme_bw(), 
-                                 labs(y = "Relative abundance [%]", x = "Date"), 
-                                 x_axis_date_short
+  breaks="2 months",
+  date_labels="%b-%y"
 )
