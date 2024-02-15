@@ -19,10 +19,10 @@ phases <- data.frame(x0 = ymd("2022-10-26"),
 
 x_axis_date <- scale_x_date(
   breaks="3 months",
-  date_labels="%b-%y"
+  date_labels="%m/%y"
 )
 
 x_axis_date_short <- scale_x_date(
   breaks="2 months",
-  date_labels="%b-%y"
+  date_labels="%m/%y"
 )
