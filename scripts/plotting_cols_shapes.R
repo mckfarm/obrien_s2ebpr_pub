@@ -3,9 +3,18 @@
 library(ggplot2)
 
 theme_black_box <- list(
-  theme_classic() +
+  theme_classic(), 
   theme(panel.border = element_rect(color = "black", fill = NA),
-        axis.line = element_line(color = NA))
+        axis.line = element_line(color = NA), 
+        text = element_text(family = "serif"),
+        strip.background = element_rect(color = NA, fill = NA),
+        legend.box.background = element_rect(color = "black", fill = NA),
+        legend.background = element_blank())
+)
+
+theme_black_box_taxa <- list(
+  theme_black_box,
+  theme(strip.text = element_text(face = "bold.italic", size = 11)) 
 )
 
 reactor_cols <- c("#06d6a0", "#118ab2", "#073b4c")

@@ -45,16 +45,16 @@ rel_pao_gao %>%
   facet_wrap(~genus_format) + 
   # geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
   # geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
-  geom_line(linewidth = 0.3) +
-  geom_point(size = 3, aes(shape = perf), fill = "white") +
+  geom_line(linewidth = 0.2) +
+  geom_point(size = 2.5, aes(shape = perf), fill = "white") +
   scale_color_reactor +
   scale_shape_carb + 
   x_axis_date + 
   ylim(0, 2.2) + 
   labs(x = "", y = "Relative abundance [%]") +
-  theme_black_box +
-  theme(strip.text = element_text(face = "italic"))
-ggsave("results/pao_gao_maintext.png", width = 7, height = 4, units = "in", dpi = 300)
+  theme_black_box_taxa
+
+ggsave("results/pao_gao_maintext.png", width = 6, height = 3.5, units = "in", dpi = 300)
 
 # supplemental all pao rel ab over time
 rel_pao_gao %>% 
@@ -63,33 +63,17 @@ rel_pao_gao %>%
   facet_wrap(~genus_format, scales = "free") + 
   # geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
   # geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
-  geom_line(linewidth = 0.3) +
-  geom_point(size = 2.5, aes(shape = perf), fill = "white", alpha = 0.8) +
+  geom_line(linewidth = 0.2) +
+  geom_point(size = 2, aes(shape = perf), fill = "white", alpha = 0.8) +
   scale_color_reactor +
   scale_shape_carb + 
   x_axis_date + 
+  scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.2))) +
   labs(x = "", y = "Relative abundance [%]") +
-  theme_black_box +
-  theme(strip.text = element_text(face = "italic"))
+  theme_black_box_taxa
 ggsave("results/pao_gao_supplemental.png", width = 10, height = 6, units = "in", dpi = 300)
 
-# sbr 3 main text?
-rel_pao_gao %>% 
-  filter(genus_format %in% c("Ca. Competibacter", "Ca. Phosphoribacter")) %>%
-  # filter(between(date, (phases$x0 - 10), phases$x4)) %>%
-  filter(date <= ymd("2023-07-31")) %>%
-  ggplot(data = ., aes(x = date, y = sum, color = genus_format)) +
-  facet_wrap(~reactor) + 
-  # geom_rect(aes(xmin = phases$x2, xmax = phases$x4, ymin = -Inf, ymax = Inf), fill = "#FFEBF2", color = NA) +
-  geom_line(linewidth = 0.3) +
-  geom_point(size = 2.5, aes(shape = perf), fill = "white", alpha = 0.8) +
-  scale_shape_carb + 
-  scale_color_manual(values = c("#be95c4","#90be6d"), name = "Genus") + 
-  x_axis_date + 
-  ylim(0, 2) + 
-  labs(x = "", y = "Relative abundance [%]") +
-  theme_black_box 
-ggsave("results/pao_gao_sbr3_maintext.png", width = 7, height = 3, units = "in", dpi = 300)
+### sbr3 main text figure in nitrospira_corr.R
 
 
 # comparisons of abundance by reactor configuration?
@@ -106,11 +90,10 @@ rel_pao_gao %>%
   geom_boxplot(outlier.color = NA) + 
   geom_point(position = position_jitterdodge()) + 
   scale_color_reactor + 
-  stat_compare_means(method = "wilcox", comparisons = my_comparisons, size = 2.8) +
+  stat_compare_means(method = "wilcox", comparisons = my_comparisons, size = 2.8, family = "serif") +
   scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.15))) +
   labs(x = "", y = "") +
-  theme_black_box + theme(legend.position = "none", 
-                          strip.text = element_text(face = "italic")) 
+  theme_black_box_taxa + theme(legend.position = "none") 
 
 compare_gao <- 
 rel_pao_gao %>% 
@@ -121,14 +104,13 @@ rel_pao_gao %>%
   geom_boxplot(outlier.color = NA) + 
   geom_point(position = position_jitterdodge()) + 
   scale_color_reactor + 
-  stat_compare_means(method = "wilcox", comparisons = my_comparisons, size = 2.8) +
+  stat_compare_means(method = "wilcox", comparisons = my_comparisons, size = 2.8, family = "serif") +
   scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.15))) +
   labs(x = "", y = "") +
-  theme_black_box + theme(legend.position = "none", 
-                          strip.text = element_text(face = "italic")) 
+  theme_black_box_taxa + theme(legend.position = "none") 
 
 compare_pao / compare_gao + plot_layout(heights = c(2, 1))
-ggsave("results/pao_gao_compare_sbr.png", width = 6, height = 6, units = "in", dpi = 300)
+ggsave("results/pao_gao_compare_sbr.png", width = 6, height = 6, units = "in", dpi = 500)
 
 
 compare_pao <- 
@@ -139,11 +121,10 @@ compare_pao <-
   geom_boxplot(outlier.color = NA) + 
   geom_point(position = position_jitterdodge()) + 
   scale_color_manual(values = mode_cols) + 
-  stat_compare_means(method = "wilcox", size = 2.8, label = "p.format", vjust = -1) +
+  stat_compare_means(method = "wilcox", size = 2.8, label = "p.format", vjust = -1, family = "serif") +
   scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.2))) +
   labs(x = "", y = "") +
-  theme_black_box + theme(legend.position = "none", 
-                          strip.text = element_text(face = "italic")) 
+  theme_black_box_taxa + theme(legend.position = "none") 
 
 compare_gao <- 
   rel_pao_gao %>% 
@@ -154,15 +135,14 @@ compare_gao <-
   geom_boxplot(outlier.color = NA) + 
   geom_point(position = position_jitterdodge()) + 
   scale_color_manual(values = mode_cols) + 
-  stat_compare_means(method = "wilcox", size = 2.8, label = "p.format", vjust = -1) +
+  stat_compare_means(method = "wilcox", size = 2.8, label = "p.format", vjust = -1, family = "serif") +
   scale_y_continuous(limits = c(0, NA), expand = expansion(mult = c(0, 0.2))) +
   labs(x = "", y = "") +
-  theme_black_box + theme(legend.position = "none", 
-                          strip.text = element_text(face = "italic")) 
+  theme_black_box_taxa + theme(legend.position = "none") 
 
 
 compare_pao / compare_gao + plot_layout(heights = c(2, 1))
-ggsave("results/pao_gao_compare_mode.png", width = 6, height = 6, units = "in", dpi = 300)
+ggsave("results/pao_gao_compare_mode.png", width = 6, height = 6, units = "in", dpi = 500)
 
 
 ### omfg why didnt I google this sooner 

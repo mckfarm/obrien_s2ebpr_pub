@@ -75,7 +75,7 @@ rel_genus %>%
   filter(date <= ymd("2023-07-31")) %>%
   ggplot(data = ., aes(x = date, y = sum, color = genus_format)) +
   facet_wrap(~reactor) + 
-  geom_rect(aes(xmin = phases$x2, xmax = phases$x4, ymin = -Inf, ymax = Inf), fill = "#FFEBF2", color = NA) +
+  # geom_rect(aes(xmin = phases$x2, xmax = phases$x4, ymin = -Inf, ymax = Inf), fill = "#FFEBF2", color = NA) +
   geom_line(linewidth = 0.2) +
   geom_point(size = 2.2, aes(shape = perf), fill = "white", alpha = 0.7) +
   scale_shape_carb + 
@@ -83,8 +83,7 @@ rel_genus %>%
   x_axis_date + 
   ylim(0, 2.9) +
   labs(x = "", y = "Relative abundance [%]") +
-  theme_black_box + theme(axis.text = element_text(size = 8)) +
-  guides(color = guide_legend(override.aes = list(size = 1.5)),
-         shape = guide_legend(override.aes = list(size = 1.5)))
+  theme_black_box + 
+  theme(strip.text = element_text(face = "bold", size = 11)) 
 
 ggsave("results/pao_gao_sbr3_maintext.png", width = 9, height = 2.5, units = "in", dpi = 500)
