@@ -86,4 +86,4 @@ rel_genus %>%
   theme_black_box + 
   theme(strip.text = element_text(face = "bold", size = 11)) 
 
-ggsave("results/pao_gao_sbr3_maintext.png", width = 9, height = 2.5, units = "in", dpi = 500)
+ggsave("results/nitrospira_supplemental.png", width = 9, height = 2.5, units = "in", dpi = 500)

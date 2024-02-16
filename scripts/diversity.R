@@ -6,7 +6,7 @@ library(phyloseq)
 library(qiime2R)
 library(vegan)
 library(patchwork)
-
+library(ggpubr)
 
 source("scripts/plotting_cols_shapes.R")
 
@@ -58,10 +58,6 @@ groups <- factor(metadata_ordered$reactor)
 
 disper_all <- betadisper(dist_all, groups, bias.adjust = TRUE)
 
-# raw plot 
-plot(disper_all, hull = FALSE, ellipse = TRUE,
-     xlab = "Axis 1 [27.6%]", ylab = "Axis2 [12.2%]", sub = NULL, main = "Weighted Unifrac")
-
 # nice plot
 dist_result_df <- disper_all$vectors %>% 
   as.data.frame() %>% 
@@ -88,9 +84,7 @@ ggplot(dist_result_df, aes(x = PCoA1, y = PCoA2, color = reactor)) +
   scale_color_reactor +
   scale_shape_op_mode + 
   labs(x = "Axis 1 [27.6%]", y = "Axis 2 [12.2%]", title = "Weighted Unifrac distance") + 
-  theme_classic() +
-  theme(panel.border = element_rect(color = "black", fill = NA),
-        axis.line = element_line(color = NA)) +
+  theme_black_box +
   guides(color = guide_legend(order = 1), 
          shape = guide_legend(order = 2))
   
@@ -102,7 +96,8 @@ dist_df_box <- as.data.frame(as.matrix(disper_all$distances)) %>%
 
 plt2 <- 
 ggplot(dist_df_box, aes(x = reactor, y = V1, color = reactor)) +
-  geom_boxplot() +
+  geom_boxplot(outlier.color = NA) +
+  geom_point(position = position_jitter(width = 0.1)) + 
   scale_color_reactor + 
   ylim(0, 0.04) + 
   labs(y = "Distance to centroid", x = "Reactor") +
@@ -124,10 +119,6 @@ metadata_ordered <- metadata_helper[match(name_order, metadata_helper$sample), ]
 groups <- factor(metadata_ordered$perf)
 
 disper_all <- betadisper(sbr23_dist, groups, bias.adjust = TRUE)
-
-# raw plot
-plot(disper_all, hull = FALSE, ellipse = TRUE,
-     xlab = "Axis 1 [31.2%]", ylab = "Axis2 [14.2%]", sub = NULL, main = "Weighted Unifrac")
 
 dist_result_df <- disper_all$vectors %>% 
   as.data.frame() %>% 
@@ -164,9 +155,14 @@ dist_df_box <- as.data.frame(as.matrix(disper_all$distances)) %>%
   left_join(metadata_ordered) %>%
   mutate(perf = factor(perf, levels = c("no C", "reduced C", "high C")))
 
+dist_df_box %>%
+  group_by(perf) %>%
+  summarise(median(V1))
+
 plt4 <- 
 ggplot(dist_df_box, aes(x = perf, y = V1, color = perf)) +
-  geom_boxplot() +
+  geom_boxplot(outlier.color = NA) +
+  geom_point(position = position_jitter(width = 0.1)) + 
   scale_color_perf + 
   ylim(0, 0.04) + 
   labs(y = "Distance to centroid", x = "Carbon") +
@@ -175,6 +171,21 @@ ggplot(dist_df_box, aes(x = perf, y = V1, color = perf)) +
 # combo
 plt1 + plt3 + plt2 + plt4 + plot_layout(ncol = 2)
 ggsave("results/beta_diversity_bigplot.png", units = "in", width = 12, height = 7, dpi = 300)
+
+
+dist_result_df <- dist_result_df %>%
+  mutate_at(vars(date), funs(year, month)) %>%
+  mutate(year_month = paste0(year, "-", month))
+
+# by date 
+ggplot(dist_result_df, aes(x = PCoA1, y = PCoA2, color = year_month)) + 
+  geom_point(data = . %>% filter(point == "points"), 
+             aes(shape = reactor), size = 2) +
+  geom_point(data = . %>% filter(point == "centroid"), 
+             shape = 21, size = 3) + 
+  labs(x = "Axis 1 [27.6%]", y = "Axis 2 [12.2%]", title = "Weighted Unifrac distance") + 
+  theme_black_box
+
 
 
 ### alpha diversity ----
@@ -195,14 +206,12 @@ alpha_div %>%
   filter(name %in% c("InvSimpson", "Shannon")) %>% 
   ggplot(data = ., aes(x = date, y = value, color = reactor)) +
   facet_wrap(~name, scales = "free") + 
-  # geom_rect(aes(xmin = phases$x0, xmax = phases$red_C, ymin = -Inf, ymax = Inf), fill = "#E8D9FC", color = NA) + 
-  # geom_rect(aes(xmin = phases$red_C, xmax = phases$no_C, ymin = -Inf, ymax = Inf), fill = "#FFD6E8", color = NA) + 
-  geom_point(size = 3, aes(shape = carb)) +
+  geom_point(size = 2, aes(shape = carb)) +
   geom_line(linewidth = 0.3) +
   scale_color_reactor +
   scale_shape_carb + 
   x_axis_date + 
-  theme_black_box +
+  theme_black_box_facet + 
   labs(x = "Date", y = "Alpha diversity measure")
+ggsave("results/alpha_diversity.png", units = "in", width = 6, height = 3, dpi = 300)
 
-ggsave("results/alpha_diversity.png", units = "in", width = 8, height = 3.5, dpi = 300)

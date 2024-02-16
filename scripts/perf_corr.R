@@ -7,6 +7,8 @@ library(rstatix)
 library(MetBrewer)
 library(patchwork)
 
+source("./scripts/plotting_cols_shapes.R")
+
 # data read in and parse
 ml <- read_excel("data/obrien_data.xlsx", sheet = "mixedliquor") %>% 
   select(-source)
@@ -21,6 +23,7 @@ rel_pao_gao_wide <- rel_pao_gao %>%
 
 pao_gao_list_format <- c("Ca. Accumulibacter", "Ca. Obscuribacter", "Ca. Phosphoribacter",
                          "Dechloromonas", "Tetrasphaera")
+
 reactors <- c("SBR1", "SBR2", "SBR3")
 
 # correlation matrices ----
@@ -70,6 +73,8 @@ for (i in reactors){
 
 p_rel_df <- do.call(rbind, p_rel_list) 
 
+
+
 # plots ----
 p_perc_df_plt <- p_perc_df %>%
   mutate(genus_format = str_replace(var2, "Ca_", "Ca. ")) %>%
@@ -114,12 +119,40 @@ plt_perc + plt_rel
 ggsave("results/biomass_corr.png", width = 6, height = 3, units = "in", dpi = 300)
 
 
-# 
-# df_all <- rel_pao_gao %>% 
-#   left_join(ml, by = join_by(date, reactor))
-# 
-# df_all %>%
-#   ggplot(., aes(x = P_perc, y = sum, color = Genus)) +
-#   facet_grid(Genus~reactor, scales = "free") + 
-#   geom_point()
+# Pearson correlation with p perc by taxa
+  
+df_labs <- rel_pao_gao %>%
+  ungroup() %>%
+  select(reactor, Genus, sum, date) %>%
+  group_by(reactor, Genus) %>%
+  slice_max(order_by = sum, n = 1) %>%
+  left_join(select(p_perc_df, var2, cor, p, reactor), by = c("Genus" = "var2",
+                                                              "reactor" = "reactor")) %>%
+  rename(lab_y = sum) %>%
+  mutate(lab_y = lab_y * 1.15) %>%
+  ungroup() %>% 
+  group_by(Genus) %>% 
+  mutate(lab_y = max(lab_y)) %>% 
+  ungroup() %>%
+  mutate(label_full = paste("r =", cor, "p =", p))
+# im sure there's a better way to do this but this assigns the correlation coefs to a maximum y value
+# the max y value is based on the max abundance of each genus because of the facet grid with fixed y axes
+
+
+df_all <- rel_pao_gao %>%
+  left_join(ml, by = join_by(date, reactor)) %>%
+  left_join(df_labs, by = join_by(date, reactor, Genus)) %>%
+  mutate(genus_format = str_replace(Genus, "Ca_", "Ca. "))
+  
+
+df_all %>%
+  filter(type == "PAO") %>%
+  ggplot(., aes(x = P_perc, y = sum)) +
+  facet_grid(genus_format~reactor, scales = "free_y") +
+  geom_point(size = 1) +
+  geom_text(aes(label = label_full, y = lab_y, x = 0.04, family = def_font), size = 3) + 
+  theme_black_box +
+  scale_y_continuous(limits = c(NA, NA), expand = expansion(mult = c(0.1, 0.2))) +
+  labs(y = "Relative abundance [%]", x = "Biomass P content [mgP/mgVSS]")
+ggsave("results/p_perc_rel_ab.png", width = 5, height = 6, units = "in", dpi = 300)
 
