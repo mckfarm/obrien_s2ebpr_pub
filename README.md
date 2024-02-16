@@ -1,17 +1,16 @@
 # Microbiome analysis for O'Brien S2EBPR project
 
-- Sequencing data processing run using a Snakemake workflow that automated sequential steps in QIIME2
 
+
+Brief overview of workflow
+- Raw sequencing data was processed using [QIIME2](https://qiime2.org) in a [Snakemake](https://snakemake.readthedocs.io/en/stable/) workflow.
+    - Raw reads are stored at NCBI with accession [PRJNA1068094](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1068094)
 - The Snakemake workflow consisted of the following steps:
-    - Import into a QIIME object
+    - Import raw reads into a QIIME object
     - Read trimming and merging
-    - Deblur to identify ASVs
-    - Taxonomy assignment against MiDAS v5.1
- 
+    - Identify ASVs with [Deblur](https://doi.org/10.1128%2FmSystems.00191-16)
+    - Taxonomy assignment using [MiDAS](https://midasfieldguide.org/guide) v5.1
 - The Snakemake workflow was run on the Quest High-Performance Computing Cluster
-
-- Analysis was performed in R with some work performed on the Quest analytics node
-
-
+- Data analysis was performed in R with most work performed on the Quest analytics node
 
 This research was supported in part through the computational resources and staff contributions provided for the Quest high performance computing facility at Northwestern University which is jointly supported by the Office of the Provost, the Office for Research, and Northwestern University Information Technology.
