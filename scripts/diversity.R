@@ -50,6 +50,9 @@ metadata_helper <- metadata %>%
 ### weighted unifrac - operation mode - all data ----
 dist_all <- distance(ps_rel, method = "wunifrac")
 dist_ord <- ordinate(ps_rel, "PCoA", "unifrac", weighted = TRUE)
+
+adonis2(dist_all ~ op_mode+perf, data = metadata_helper)
+
 dist_df <- as.data.frame(as.matrix(dist_all))
 name_order <- colnames(dist_df)
 
@@ -84,7 +87,7 @@ ggplot(dist_result_df, aes(x = PCoA1, y = PCoA2, color = reactor)) +
   scale_color_reactor +
   scale_shape_op_mode + 
   labs(x = "Axis 1 [27.6%]", y = "Axis 2 [12.2%]", title = "Weighted Unifrac distance") + 
-  theme_black_box +
+  theme_black_box + theme(text=element_text(size=15)) + 
   guides(color = guide_legend(order = 1), 
          shape = guide_legend(order = 2))
   
@@ -101,7 +104,7 @@ ggplot(dist_df_box, aes(x = reactor, y = V1, color = reactor)) +
   scale_color_reactor + 
   ylim(0, 0.04) + 
   labs(y = "Distance to centroid", x = "Reactor") +
-  theme_black_box + theme(legend.position = "none")
+  theme_black_box + theme(legend.position = "none", text=element_text(size=15))
 
 
 
@@ -110,6 +113,11 @@ ps_rel_sbr23 <- subset_samples(ps_rel, reactor != "SBR1")
 sbr23_dist <- distance(ps_rel_sbr23, method = "wunifrac")
 sbr23_ord <- ordinate(ps_rel_sbr23, "PCoA", "unifrac", weighted=TRUE)
 dist_df <- as.data.frame(as.matrix(sbr23_dist))
+
+sbr23_metadata_helper <- metadata_helper %>%
+  filter(reactor != "SBR1")
+
+adonis2(sbr23_dist ~ carb+op_mode, data = sbr23_metadata_helper)
 
 name_order <- colnames(dist_df)
 
@@ -146,7 +154,7 @@ ggplot(dist_result_df, aes(x = PCoA1, y = PCoA2, color = perf)) +
   scale_shape_op_mode + 
   scale_color_perf + 
   labs(x = "Axis 1 [31.2%]", y = "Axis 2 [14.2%]", title = "Weighted Unifrac distance - SBR2 and SBR3 only") + 
-  theme_black_box + 
+  theme_black_box + theme(text=element_text(size=15)) + 
   guides(color = guide_legend(order = 1), 
          shape = guide_legend(order = 2))
 
@@ -166,7 +174,7 @@ ggplot(dist_df_box, aes(x = perf, y = V1, color = perf)) +
   scale_color_perf + 
   ylim(0, 0.04) + 
   labs(y = "Distance to centroid", x = "Carbon") +
-  theme_black_box + theme(legend.position = "none")
+  theme_black_box + theme(legend.position = "none", text=element_text(size=15))
 
 # combo
 plt1 + plt3 + plt2 + plt4 + plot_layout(ncol = 2)
@@ -189,6 +197,7 @@ ggplot(dist_result_df, aes(x = PCoA1, y = PCoA2, color = year_month)) +
 
 
 ### alpha diversity ----
+
 source("scripts/plotting_dates.R")
 
 tot_counts <- as.data.frame(as.matrix(sample_sums(ps))) %>%
@@ -200,10 +209,11 @@ alpha_div <- estimate_richness(ps) %>%
   mutate(sample = str_replace(sample, "\\.", "-")) %>%
   left_join(tot_counts) %>%
   pivot_longer(-sample) %>%
-  left_join(metadata_helper) 
+  left_join(metadata_helper) %>%
+  mutate(name = str_replace(name, "InvSimpson", "Inverse Simpson"))
 
 alpha_div %>% 
-  filter(name %in% c("InvSimpson", "Shannon")) %>% 
+  filter(name %in% c("Inverse Simpson", "Shannon")) %>% 
   ggplot(data = ., aes(x = date, y = value, color = reactor)) +
   facet_wrap(~name, scales = "free") + 
   geom_point(size = 2, aes(shape = carb)) +
@@ -214,4 +224,27 @@ alpha_div %>%
   theme_black_box_facet + 
   labs(x = "Date", y = "Alpha diversity measure")
 ggsave("results/alpha_diversity.png", units = "in", width = 6, height = 3, dpi = 300)
+
+alpha_div %>% 
+  filter(name %in% c("Inverse Simpson", "Shannon")) %>% 
+  ggplot(data = ., aes(x = op_mode, y = value, color = op_mode)) +
+  facet_wrap(~name, scales = "free") + 
+  geom_boxplot(outlier.color = NA) + 
+  geom_point(position = position_jitter(width = 0.1)) + 
+  scale_color_op_mode + 
+  theme_black_box_facet +
+  stat_compare_means()
+
+my_comparisons <- list(c("SBR1", "SBR2"),
+                       c("SBR2", "SBR3"),
+                       c("SBR1", "SBR3"))
+alpha_div %>% 
+  filter(name %in% c("Inverse Simpson", "Shannon")) %>% 
+  ggplot(data = ., aes(x = carb, y = value, color = carb)) +
+  facet_wrap(~name, scales = "free") + 
+  geom_boxplot(outlier.color = NA) + 
+  geom_point(position = position_jitter(width = 0.1)) + 
+  scale_color_reactor + 
+  theme_black_box_facet +
+  stat_compare_means()
 

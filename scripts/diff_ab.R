@@ -61,7 +61,11 @@ sig_table <- fit_genus_sep$results %>%
 
 sig_table %>%
   filter(metadata != "perf") %>%
-  mutate(value = factor(value, levels = c("SBR2", "SBR3", "flow_2weekave", "temp"))) %>%
+  mutate(value = case_when(
+    value == "flow_2weekave" ~ "Flow rate, 2 week average",
+    value == "temp" ~ "Temperature",
+    TRUE ~ value)) %>%
+  mutate(value = factor(value, levels = c("SBR2", "SBR3", "Flow rate, 2 week average", "Temperature"))) %>%
   ggplot(., aes(x=value, y = Genus, fill=map_val)) +
   geom_tile() +
   geom_text(aes(label=map_sign)) +
@@ -69,7 +73,10 @@ sig_table %>%
   scale_y_discrete(limits = rev) +
   theme_bw() +
   labs(x = "Variable", y = "Genus") +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1))
-ggsave("results/maaslin_diff_ab.png", width = 5, height = 10, units = "in", dpi = 300)
+  theme(text = element_text(family = "FreeSerif", size = 12),
+        axis.text.x = element_text(angle = 30, hjust = 1),
+        axis.text.y = element_text(face = "italic"))
+
+ggsave("results/maaslin_diff_ab.png", width = 5, height = 9.5, units = "in", dpi = 300)
 
 

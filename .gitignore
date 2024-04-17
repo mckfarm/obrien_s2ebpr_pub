@@ -1,5 +1,6 @@
 .DS_store
 .xlsx
+/results/maaslin_genus
 
 # History files
 .Rhistory

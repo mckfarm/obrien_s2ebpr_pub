@@ -32,9 +32,8 @@ mode_cols <- c("#ff9770", "#ff70a6")
 scale_color_reactor <- scale_color_manual(values = reactor_cols, name = "Reactor")
 scale_shape_reactor <- scale_shape_manual(values = c(21, 22, 23), name = "Reactor")
 
-scale_color_reactor <- scale_color_manual(values = reactor_cols, name = "Reactor")
+scale_color_op_mode <- scale_color_manual(values = mode_cols, name = "Reactor")
 scale_shape_op_mode <- scale_shape_manual(values = c(16, 17), name = "Operation mode")
+
 scale_color_perf <- scale_color_manual(values = carbon_cols, name = "Carbon")
-
-
 scale_shape_carb <- scale_shape_manual(values = c(21, 19), name = "Carbon dose")
